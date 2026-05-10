@@ -121,13 +121,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: >
-      sh -c "if [ -f app/scheduler.py ]; then
-        python -m app.scheduler;
-      else
-        echo 'backend/app/scheduler.py is not implemented yet; Phase 1 container is waiting.';
-        tail -f /dev/null;
-      fi"
+    command: python -m app.scheduler
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-local}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://pipeline:pipeline@postgres:5432/pipeline}
@@ -141,6 +135,8 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+    deploy:
+      replicas: 1
     networks:
       - pipeline_net
 

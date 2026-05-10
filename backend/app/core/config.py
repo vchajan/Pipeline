@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     )
     redis_url: str | None = Field(default=None, alias="REDIS_URL")
     rq_queue_name: str = Field(default="pipeline-runs", alias="RQ_QUEUE_NAME")
+    scheduler_id: str = Field(default="local-scheduler", alias="SCHEDULER_ID")
+    scheduler_interval_seconds: int = Field(default=30, alias="SCHEDULER_INTERVAL_SECONDS")
 
     auth_mode: str = Field(default="keycloak", alias="AUTH_MODE")
     demo_auth_enabled: bool = Field(default=True, alias="DEMO_AUTH_ENABLED")
