@@ -17,7 +17,7 @@ services:
 
   keycloak:
     image: ${KEYCLOAK_IMAGE:-quay.io/keycloak/keycloak:26.0}
-    command: start-dev
+    command: start-dev --import-realm
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${KEYCLOAK_DB:-keycloak}
@@ -26,6 +26,8 @@ services:
       KC_HEALTH_ENABLED: "true"
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./infra/keycloak/pipeline-monitor-realm.json:/opt/keycloak/data/import/pipeline-monitor-realm.json:ro
     ports:
       - "${KEYCLOAK_PORT:-8080}:8080"
     depends_on:
