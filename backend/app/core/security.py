@@ -33,15 +33,10 @@ DEMO_USERS: dict[int, dict[str, str | UserRole]] = {
 
 def authenticate_keycloak_user(db: Session, token: str) -> User:
     claims = validate_keycloak_token(token)
-    subject = claims.get("sub")
-    if not subject:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token is missing subject",
-        )
+    subject = _external_subject_from_claims(claims)
 
     role = _role_from_claims(claims)
-    email = claims.get("email") or f"{subject}@keycloak.local"
+    email = claims.get("email") or f"{subject.replace(':', '_')}@keycloak.local"
     display_name = (
         claims.get("name")
         or claims.get("preferred_username")
@@ -50,6 +45,10 @@ def authenticate_keycloak_user(db: Session, token: str) -> User:
     )
 
     user = db.scalar(select(User).where(User.external_subject == subject))
+
+    if user is None and email:
+        user = db.scalar(select(User).where(User.email == email))
+
     if user is None:
         user = User(
             email=email,
@@ -62,6 +61,7 @@ def authenticate_keycloak_user(db: Session, token: str) -> User:
         user.email = email
         user.display_name = display_name
         user.role = role
+        user.external_subject = subject
 
     db.commit()
     db.refresh(user)
@@ -98,7 +98,18 @@ def authenticate_demo_user(db: Session, demo_user_id: str) -> User:
     db.refresh(user)
     return user
 
+def _external_subject_from_claims(claims: dict[str, Any]) -> str:
+    """Build a stable local identity from Keycloak token claims."""
 
+    for claim_name in ("sub", "preferred_username", "email", "sid"):
+        claim_value = claims.get(claim_name)
+        if claim_value:
+            return f"keycloak:{claim_value}"
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Token is missing usable user identity",
+    )
 def _role_from_claims(claims: dict[str, Any]) -> UserRole:
     roles = set()
     roles.update(claims.get("roles", []))
