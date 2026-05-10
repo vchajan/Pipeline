@@ -1,4 +1,5 @@
 from app.schemas.alert import AlertEventRead, AlertRuleCreate, AlertRuleRead, AlertRuleUpdate
+from app.schemas.auth import AuthUserRead
 from app.schemas.dataset import DatasetCreate, DatasetRead, DatasetUpdate
 from app.schemas.operational import AuditLogRead, DashboardSummary, SystemStatus
 from app.schemas.pipeline import (
@@ -15,6 +16,7 @@ __all__ = [
     "AlertRuleCreate",
     "AlertRuleRead",
     "AlertRuleUpdate",
+    "AuthUserRead",
     "AuditLogRead",
     "DashboardSummary",
     "DatasetCreate",

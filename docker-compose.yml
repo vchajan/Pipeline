@@ -81,6 +81,8 @@ services:
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-pipeline-monitor}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-pipeline-monitor-web}
       KEYCLOAK_AUDIENCE: ${KEYCLOAK_AUDIENCE:-pipeline-monitor-web}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER:-http://localhost:8080/realms/pipeline-monitor}
+      KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL:-http://keycloak:8080/realms/pipeline-monitor/protocol/openid-connect/certs}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:

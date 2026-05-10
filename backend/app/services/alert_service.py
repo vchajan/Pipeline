@@ -63,21 +63,23 @@ def get_alert(db: Session, alert_id: int) -> AlertEvent:
     return alert
 
 
-def acknowledge_alert(db: Session, alert_id: int) -> AlertEvent:
+def acknowledge_alert(db: Session, alert_id: int, user_id: int | None = None) -> AlertEvent:
     alert = get_alert(db, alert_id)
     if alert.status == AlertStatus.RESOLVED:
         raise BusinessRuleError("Resolved alerts cannot be acknowledged")
     alert.status = AlertStatus.ACKNOWLEDGED
     alert.acknowledged_at = datetime.now(UTC)
+    alert.acknowledged_by = user_id
     db.commit()
     db.refresh(alert)
     return alert
 
 
-def resolve_alert(db: Session, alert_id: int) -> AlertEvent:
+def resolve_alert(db: Session, alert_id: int, user_id: int | None = None) -> AlertEvent:
     alert = get_alert(db, alert_id)
     alert.status = AlertStatus.RESOLVED
     alert.resolved_at = datetime.now(UTC)
+    alert.resolved_by = user_id
     db.commit()
     db.refresh(alert)
     return alert

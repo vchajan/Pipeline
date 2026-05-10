@@ -45,6 +45,8 @@ class Settings(BaseSettings):
         default="pipeline-monitor-web",
         alias="KEYCLOAK_AUDIENCE",
     )
+    keycloak_issuer: str | None = Field(default=None, alias="KEYCLOAK_ISSUER")
+    keycloak_jwks_url: str | None = Field(default=None, alias="KEYCLOAK_JWKS_URL")
 
     @field_validator("backend_cors_origins", mode="before")
     @classmethod
@@ -56,6 +58,19 @@ class Settings(BaseSettings):
     @property
     def sqlalchemy_database_url(self) -> str:
         return self.database_url or self.sqlite_database_url
+
+    @property
+    def keycloak_issuer_url(self) -> str:
+        return self.keycloak_issuer or f"{self.keycloak_url}/realms/{self.keycloak_realm}"
+
+    @property
+    def keycloak_jwks_uri(self) -> str:
+        if self.keycloak_jwks_url:
+            return self.keycloak_jwks_url
+        return (
+            f"{self.keycloak_internal_url}/realms/{self.keycloak_realm}"
+            "/protocol/openid-connect/certs"
+        )
 
 
 @lru_cache

@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import OperatorUser, get_db
 from app.schemas.alert import AlertEventRead
 from app.services import alert_service
 
@@ -23,10 +23,10 @@ def get_alert(alert_id: int, db: DbSession):
 
 
 @router.patch("/{alert_id}/acknowledge", response_model=AlertEventRead)
-def acknowledge_alert(alert_id: int, db: DbSession):
-    return alert_service.acknowledge_alert(db, alert_id)
+def acknowledge_alert(alert_id: int, db: DbSession, current_user: OperatorUser):
+    return alert_service.acknowledge_alert(db, alert_id, current_user.id)
 
 
 @router.patch("/{alert_id}/resolve", response_model=AlertEventRead)
-def resolve_alert(alert_id: int, db: DbSession):
-    return alert_service.resolve_alert(db, alert_id)
+def resolve_alert(alert_id: int, db: DbSession, current_user: OperatorUser):
+    return alert_service.resolve_alert(db, alert_id, current_user.id)

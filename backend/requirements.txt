@@ -2,6 +2,7 @@ alembic==1.14.0
 croniter==6.0.0
 fastapi==0.115.6
 psycopg[binary]==3.2.3
+PyJWT[crypto]==2.10.1
 pydantic-settings==2.7.1
 redis==5.2.1
 rq==2.0.0

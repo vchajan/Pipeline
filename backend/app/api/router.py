@@ -4,6 +4,7 @@ from app.api.routes import (
     alert_rules,
     alerts,
     audit_logs,
+    auth,
     dashboard,
     datasets,
     pipeline_versions,
@@ -14,6 +15,7 @@ from app.api.routes import (
 
 
 api_router = APIRouter()
+api_router.include_router(auth.router)
 api_router.include_router(datasets.router)
 api_router.include_router(pipelines.router)
 api_router.include_router(pipeline_versions.router)
