@@ -3,12 +3,16 @@ from sqlalchemy.orm import Session
 
 from app.models.alert import AlertEvent
 from app.models.dataset import Dataset
-from app.models.enums import JobRunStatus
+from app.models.enums import JobRunStatus, JobRunStepStatus
 from app.models.pipeline import Pipeline, PipelineVersion
-from app.models.run import JobRun
+from app.models.run import JobRun, JobRunStep
 from app.schemas.pipeline import PipelineCreate, PipelineUpdate, PipelineVersionCreate
 from app.schemas.run import JobRunCreate
 from app.services.exceptions import BusinessRuleError, NotFoundError
+from app.workers.queue import enqueue_pipeline_run
+
+
+DEFAULT_RUN_STEPS = ("extract", "transform", "load")
 
 
 def create_pipeline(db: Session, payload: PipelineCreate) -> Pipeline:
@@ -135,11 +139,28 @@ def create_pipeline_run(db: Session, pipeline_id: int, payload: JobRunCreate) ->
         pipeline_id=pipeline_id,
         pipeline_version_id=active_version.id if active_version else None,
         trigger_type=payload.trigger_type,
-        status=JobRunStatus.PENDING,
+        status=JobRunStatus.QUEUED,
         created_by=payload.created_by,
     )
     db.add(run)
     db.commit()
     db.refresh(run)
-    # TODO: enqueue this run to Redis/RQ in Phase 5.
+    steps = [
+        JobRunStep(
+            run_id=run.id,
+            name=name,
+            order_index=index,
+            status=JobRunStepStatus.PENDING,
+        )
+        for index, name in enumerate(DEFAULT_RUN_STEPS, start=1)
+    ]
+    db.add_all(steps)
+    db.commit()
+    db.refresh(run)
+    try:
+        enqueue_pipeline_run(run.id)
+    except Exception as exc:
+        db.delete(run)
+        db.commit()
+        raise BusinessRuleError("Failed to enqueue pipeline run") from exc
     return run
