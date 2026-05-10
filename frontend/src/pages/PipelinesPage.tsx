@@ -1,5 +1,5 @@
 import type { FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import {
@@ -7,6 +7,7 @@ import {
   useCurrentUser,
   useDatasets,
   usePipelines,
+  useRuns,
 } from "../api/queries";
 import { canManageDefinitions } from "../auth/permissions";
 import { DataTable } from "../components/DataTable";
@@ -14,7 +15,7 @@ import { PageHeader } from "../components/PageHeader";
 import { SectionCard } from "../components/SectionCard";
 import { ErrorState, LoadingState } from "../components/StateBlock";
 import { StatusBadge } from "../components/StatusBadge";
-import type { Pipeline, PipelineInput } from "../types/domain";
+import type { JobRun, Pipeline, PipelineInput } from "../types/domain";
 import {
   formatDate,
   getMutationMessage,
@@ -41,9 +42,23 @@ export function PipelinesPage() {
   const { data: user } = useCurrentUser();
   const datasetsQuery = useDatasets();
   const pipelinesQuery = usePipelines();
+  const runsQuery = useRuns();
   const createPipeline = useCreatePipeline();
   const [form, setForm] = useState<PipelineInput>(initialForm);
   const canManage = canManageDefinitions(user?.role);
+
+  const latestRunByPipeline = useMemo(() => {
+    const latestRuns = new Map<number, JobRun>();
+
+    for (const run of runsQuery.data ?? []) {
+      const current = latestRuns.get(run.pipeline_id);
+      if (!current || Date.parse(run.created_at) > Date.parse(current.created_at)) {
+        latestRuns.set(run.pipeline_id, run);
+      }
+    }
+
+    return latestRuns;
+  }, [runsQuery.data]);
 
   useEffect(() => {
     if (datasetsQuery.data?.length && form.dataset_id === 0) {
@@ -214,6 +229,9 @@ export function PipelinesPage() {
         {pipelinesQuery.isError ? (
           <ErrorState title="Pipelines unavailable" message="The pipeline list request failed." />
         ) : null}
+        {runsQuery.isError ? (
+          <ErrorState title="Run history unavailable" message="Latest run data could not be loaded." />
+        ) : null}
         {pipelinesQuery.data ? (
           <DataTable<Pipeline>
             rows={pipelinesQuery.data}
@@ -234,6 +252,23 @@ export function PipelinesPage() {
               { header: "Engine", render: (pipeline) => label(pipeline.engine) },
               { header: "Schedule", render: (pipeline) => pipeline.schedule ?? "Manual" },
               { header: "Active", render: (pipeline) => <StatusBadge value={pipeline.active} /> },
+              {
+                header: "Last run",
+                render: (pipeline) => {
+                  const latestRun = latestRunByPipeline.get(pipeline.id);
+                  if (!latestRun) {
+                    return runsQuery.isLoading ? "Loading" : "No runs";
+                  }
+                  return <Link to={`/runs/${latestRun.id}`}>#{latestRun.id}</Link>;
+                },
+              },
+              {
+                header: "Last status",
+                render: (pipeline) => {
+                  const latestRun = latestRunByPipeline.get(pipeline.id);
+                  return latestRun ? <StatusBadge value={latestRun.status} /> : "-";
+                },
+              },
               { header: "Updated", render: (pipeline) => formatDate(pipeline.updated_at) },
             ]}
           />
