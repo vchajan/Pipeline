@@ -1,31 +1,70 @@
 # Big Data Pipeline Monitor
 
-Codex-ready repository scaffold for the MSWA project **Big Data Pipeline Monitor**.
+MSWA school project for simulating evidence, execution and monitoring of data pipelines over datasets.
 
-This repository starts as a scaffold for Codex. The full technical specification and phase prompts are in:
+The system is intentionally a simulation. It is not a real Spark, Airflow, Kafka or distributed big data platform.
 
-- `AGENTS.md`
-- `docs/PROJECT_BLUEPRINT.md`
-- `docs/CODEX_PHASE_PROMPTS.md`
+## Quick Start
 
-## How to use
+Copy the example environment file:
 
-1. Unzip this folder.
-2. Open the root folder in VS Code.
-3. Start Codex extension or Codex CLI in this folder.
-4. Ask Codex to read `AGENTS.md`, `docs/PROJECT_BLUEPRINT.md` and `docs/CODEX_PHASE_PROMPTS.md`.
-5. Start with Phase 1 only.
-
-Suggested first prompt:
-
-```text
-Read AGENTS.md, docs/PROJECT_BLUEPRINT.md and docs/CODEX_PHASE_PROMPTS.md.
-Implement only Phase 1: infrastructure skeleton.
-Do not implement all business logic yet.
-After editing, summarize changed files and commands to test.
+```powershell
+Copy-Item .env.example .env
 ```
 
-## Target architecture
+Or on Linux/macOS:
+
+```bash
+cp .env.example .env
+```
+
+Validate the default Docker Compose setup:
+
+```bash
+docker compose config
+```
+
+Start the Phase 1 infrastructure skeleton:
+
+```bash
+docker compose up --build
+```
+
+Start with Keycloak included:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.keycloak.yml up --build
+```
+
+The Nginx entry point is available at `http://localhost:8088` by default. PostgreSQL and Redis are also published locally for development.
+
+Phase 1 only wires the infrastructure. Backend, worker, scheduler and frontend containers wait when their application entrypoints do not exist yet; those entrypoints are implemented in later phases.
+
+## Services
+
+- `postgres`: main PostgreSQL database
+- `redis`: Redis instance for the future RQ queue
+- `backend-migrate`: Alembic migration runner
+- `backend`: future FastAPI API service
+- `worker`: future RQ worker service
+- `scheduler`: future singleton scheduler service
+- `frontend`: future Vite React application
+- `nginx`: single reverse proxy entry point
+- `keycloak-db`: Keycloak database, enabled by override
+- `keycloak`: Keycloak auth server, enabled by override
+
+## Useful Commands
+
+```bash
+docker compose config
+docker compose -f docker-compose.yml -f docker-compose.keycloak.yml config
+docker compose ps
+docker compose logs -f
+docker compose down
+docker compose down -v
+```
+
+## Target Architecture
 
 - Frontend: React, Vite, TypeScript, React Router, TanStack Query, custom CSS
 - Backend: FastAPI, Pydantic, SQLAlchemy, Alembic
@@ -38,4 +77,4 @@ After editing, summarize changed files and commands to test.
 - Tests: Pytest, Vitest, Playwright, smoke test
 - CI: GitHub Actions
 
-This project is a simulation of data pipeline orchestration and monitoring. It is not a real Spark, Airflow, Kafka or distributed big data platform.
+Project guidance lives in `AGENTS.md`, `docs/PROJECT_BLUEPRINT.md` and `docs/CODEX_PHASE_PROMPTS.md`.

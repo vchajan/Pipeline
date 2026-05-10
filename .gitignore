@@ -1,16 +1,42 @@
-__pycache__/
-*.pyc
-.venv/
+# Environment
 .env
-.env.local
-*.db
-*.sqlite
-node_modules/
-dist/
-coverage/
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+.venv/
+venv/
+env/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.coverage
+htmlcov/
+*.db
+*.sqlite
+*.sqlite3
+pipeline_monitor.db
+
+# Frontend
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+coverage/
+frontend/coverage/
+playwright-report/
+test-results/
+
+# Tooling and editors
 .DS_Store
+Thumbs.db
 .vscode/
 .idea/
+*.log
+
+# Docker/local runtime
+docker-compose.override.yml

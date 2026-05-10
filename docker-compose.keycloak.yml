@@ -1,2 +1,38 @@
-# Placeholder. Ask Codex to implement Keycloak services in Phase 1/8.
-services: {}
+services:
+  keycloak-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${KEYCLOAK_DB:-keycloak}
+      POSTGRES_USER: ${KEYCLOAK_DB_USER:-keycloak}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pipeline_net
+
+  keycloak:
+    image: ${KEYCLOAK_IMAGE:-quay.io/keycloak/keycloak:26.0}
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${KEYCLOAK_DB:-keycloak}
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+      KC_HEALTH_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    networks:
+      - pipeline_net
+
+volumes:
+  keycloak_db_data:
