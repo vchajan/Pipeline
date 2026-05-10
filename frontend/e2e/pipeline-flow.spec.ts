@@ -14,16 +14,24 @@ test("demo user can create and monitor a simulated pipeline", async ({ page }) =
   await expect(page.getByRole("link", { name: "Orders" })).toBeVisible();
 
   await page.getByRole("link", { name: "Pipelines" }).click();
-  await page.getByLabel("Name").fill("Orders daily load");
-  await page.getByLabel("Schedule").fill("*/15 * * * *");
-  await page.getByRole("button", { name: "Create pipeline" }).click();
-  await expect(page.getByRole("link", { name: "Orders daily load" })).toBeVisible();
+
+await page.getByLabel("Dataset").selectOption("1");
+await expect(page.getByRole("button", { name: "Create pipeline" })).toBeEnabled();
+
+await page.getByLabel("Name").fill("Orders daily load");
+await page.getByLabel("Schedule").fill("*/15 * * * *");
+await page.getByRole("button", { name: "Create pipeline" }).click();
+
+await expect(page.getByRole("link", { name: "Orders daily load" })).toBeVisible();
 
   await page.getByRole("link", { name: "Alert Rules" }).click();
   await page.getByLabel("Name").fill("Run failed");
   await page.getByLabel("Condition").selectOption("run_failed");
   await page.getByRole("button", { name: "Create rule" }).click();
-  await expect(page.getByText("Run failed")).toBeVisible();
+  await expect(page.getByLabel("Name")).toHaveValue("");
+  await expect(
+  page.locator("tbody").getByText("Run failed", { exact: true }),
+).toBeVisible();
 
   await page.getByRole("button", { name: "Operator" }).click();
   await page.getByRole("link", { name: "Pipelines" }).click();
@@ -32,7 +40,7 @@ test("demo user can create and monitor a simulated pipeline", async ({ page }) =
 
   await page.getByRole("link", { name: "#1" }).first().click();
   await expect(page.getByRole("heading", { name: "Run #1" })).toBeVisible();
-  await expect(page.getByText("ETL Steps")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ETL Steps" })).toBeVisible();
 
   await page.getByRole("link", { name: "Alerts" }).click();
   await page.getByRole("link", { name: "#1" }).click();
@@ -40,7 +48,7 @@ test("demo user can create and monitor a simulated pipeline", async ({ page }) =
   await page.getByRole("button", { name: "Acknowledge" }).click();
   await expect(page.getByText("acknowledged")).toBeVisible();
   await page.getByRole("button", { name: "Resolve" }).click();
-  await expect(page.getByText("resolved")).toBeVisible();
+  await expect(page.locator('span.status-badge').getByText('resolved')).toBeVisible();
 });
 
 async function installApiMock(page: Page) {
@@ -55,12 +63,19 @@ async function installApiMock(page: Page) {
   const runs: RunPayload[] = [];
   const alerts: AlertPayload[] = [];
 
-  await page.route("**/api/**", async (route) => {
+  await page.route("http://localhost:5173/api/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    const path = url.pathname.replace(/^\/api/, "");
     const method = request.method();
     const demoUserId = request.headers()["x-demo-user-id"] ?? "1";
+
+    const isApiRequest = url.pathname.startsWith("/api/") || url.pathname === "/auth/me";
+
+    if (!isApiRequest) {
+      return route.continue();
+    }
+
+    const path = url.pathname.replace(/^\/api/, "");
 
     if (path === "/auth/me" && method === "GET") {
       return fulfill(route, users[demoUserId as keyof typeof users] ?? users["1"]);
