@@ -5,4 +5,18 @@ class Base(DeclarativeBase):
     pass
 
 
-# Future model modules are imported here so Alembic can discover metadata.
+# Imported for Alembic metadata discovery.
+from app.models import (  # noqa: E402,F401
+    AlertEvent,
+    AlertRule,
+    AuditLog,
+    Dataset,
+    JobRun,
+    JobRunStep,
+    OutboxEvent,
+    Pipeline,
+    PipelineVersion,
+    SchedulerHeartbeat,
+    User,
+    WorkerHeartbeat,
+)
