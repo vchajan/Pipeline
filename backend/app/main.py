@@ -5,10 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from redis import Redis
 from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
+from app.api import api_router
 from app.core.config import get_settings
 from app.db.session import engine
+from app.services.exceptions import ServiceError
 
 
 settings = get_settings()
@@ -26,6 +28,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(api_router)
+app.include_router(api_router, prefix="/api")
+
+
+@app.exception_handler(ServiceError)
+def handle_service_error(_, exc: ServiceError) -> JSONResponse:
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
+
+
+@app.exception_handler(IntegrityError)
+def handle_integrity_error(_, __: IntegrityError) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={"detail": "Database constraint violated"},
+    )
 
 
 @app.get("/health")

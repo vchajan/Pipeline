@@ -5,18 +5,19 @@ class Base(DeclarativeBase):
     pass
 
 
-# Imported for Alembic metadata discovery.
-from app.models import (  # noqa: E402,F401
-    AlertEvent,
-    AlertRule,
-    AuditLog,
-    Dataset,
-    JobRun,
-    JobRunStep,
-    OutboxEvent,
-    Pipeline,
-    PipelineVersion,
-    SchedulerHeartbeat,
-    User,
-    WorkerHeartbeat,
-)
+def import_models() -> None:
+    """Import model modules so Alembic can discover Base metadata."""
+    from app.models import (  # noqa: F401
+        AlertEvent,
+        AlertRule,
+        AuditLog,
+        Dataset,
+        JobRun,
+        JobRunStep,
+        OutboxEvent,
+        Pipeline,
+        PipelineVersion,
+        SchedulerHeartbeat,
+        User,
+        WorkerHeartbeat,
+    )
